@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SECURE NOTE | Premium Security</title>
+    <style>
+        /* =========================================================================
+           SISTEMA DE DESIGN (V4.5 - UX/UI/SEC UPDATES)
+           ========================================================================= */
+        :root {
+            --radius-main: 24px;
+            --radius-card: 20px;
+            --radius-btn: 10px;
+            --font-main: 'Segoe UI Variable', 'Inter', system-ui, sans-serif;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --max-editor-width: 800px;
+        }
+
+        :root[data-theme="dark"] {
+            --bg-color: #09090b; 
+            --auth-bg: #020203;  
+            --surface: #141416;
+            --surface-hover: #1f1f23;
+            --border: #27272a;
+            --text: #f4f4f5;
+            --text-muted: #71717a;
+            --accent: #f59e0b;
+            --accent-hover: #d97706;
+            --danger: #ef4444;
+            --card-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.8);
+        }
+
+        :root[data-theme="light"] {
+            --bg-color: #f1f5f9; 
+            --auth-bg: #cbd5e1;
+            --surface: #ffffff;
+            --surface-hover: #f8fafc;
+            --border: #e2e8f0;
+            --text: #0f172a;
+            --text-muted: #475569;
+            --accent: #f59e0b;
+            --accent-hover: #d97706;
+            --danger: #dc2626;
+            --card-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font-main); -webkit-tap-highlight-color: transparent; }
+
+        body {
+            background-color: var(--bg-color); color: var(--text);
+            display: flex; height: 100vh; overflow: hidden;
+            transition: background-color 0.3s ease;
+            font-size: 14px;
+        }
+
+        .screen { display: none; width: 100%; height: 100%; position: relative; }
+        .screen.active { display: flex; }
+
+        /* --- Skeleton Screen --- */
+        .skeleton {
+            background: linear-gradient(90deg, var(--surface) 25%, var(--surface-hover) 50%, var(--surface) 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s infinite;
+            border-radius: 12px;
+            height: 52px;
+            width: 100%;
+            margin-bottom: 8px;
+            border: 1px solid var(--border);
+        }
+        @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* --- Notificações --- */
+        .toast-container {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            z-index: 10000; display: flex; flex-direction: column; gap: 5px;
+        }
+        .toast {
+            background: var(--surface); color: var(--text); border: 1px solid var(--accent);
+            padding: 10px 22px; border-radius: 50px; font-weight: 700; font-size: 12px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3); animation: toastIn 0.3s ease forwards;
+            display: flex; align-items: center; gap: 8px;
+        }
+        @keyframes toastIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- Autenticação --- */
+        .auth-container { 
+            width: 100%; display: flex; flex-direction: column; background-color: var(--auth-bg);
+            background-image: radial-gradient(circle at top right, rgba(245, 158, 11, 0.08), transparent 60%);
+        }
+        .auth-header { display: flex; justify-content: space-between; padding: 15px 30px; align-items: center; }
+        .auth-center { flex-grow: 1; display: flex; justify-content: center; align-items: center; padding: 15px; }
+        
+        .auth-card {
+            background-color: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius-card); padding: 35px; width: 100%; max-width: 380px;
+            box-shadow: var(--card-shadow); text-align: center;
+            animation: cardFadeIn 0.4s ease-out; position: relative;
+        }
+        @keyframes cardFadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+        .window-dots { display: flex; gap: 6px; position: absolute; top: 15px; left: 20px; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; cursor: pointer; }
+        .dot-red { background: #ff5f57; }
+        .dot-yellow { background: #febc2e; }
+        .dot-green { background: #28c840; }
+
+        .input-group { margin-bottom: 15px; text-align: left; position: relative; }
+        .input-group label { display: block; font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px; }
+        .input-group input {
+            background-color: var(--bg-color); border: 1px solid var(--border);
+            color: var(--text); border-radius: 10px; padding: 12px 15px; width: 100%;
+            font-size: 14px; font-weight: 600; outline: none; transition: 0.2s;
+        }
+        .input-group input:focus { border-color: var(--accent); }
+        .btn-eye { position: absolute; right: 12px; top: 28px; background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 16px; }
+
+        .btn-main {
+            background-color: var(--accent); color: white; border: none;
+            border-radius: 10px; padding: 12px; font-size: 13px; font-weight: 800;
+            cursor: pointer; width: 100%; transition: 0.2s;
+            box-shadow: 0 4px 10px -2px var(--accent);
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
+        .btn-main:hover { background-color: var(--accent-hover); transform: translateY(-1px); }
+
+        /* --- Sidebar --- */
+        .sidebar {
+            width: 280px; min-width: 280px; background-color: var(--surface);
+            border-right: 1px solid var(--border); display: flex; flex-direction: column;
+            padding: 20px 12px; gap: 12px; transition: var(--transition);
+        }
+        .sidebar.minimized { width: 70px; min-width: 70px; padding: 20px 8px; }
+        .sidebar .hide-mini { display: block; }
+        .sidebar .show-mini-only { display: none !important; }
+        .sidebar.minimized .hide-mini { display: none !important; }
+        .sidebar.minimized .show-mini-only { display: flex !important; align-items: center; justify-content: center; width: 100%; }
+
+        .notes-list { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+        .note-card {
+            padding: 12px 14px; border-radius: 12px; cursor: pointer; border: 1px solid var(--border);
+            background: var(--surface); transition: 0.2s;
+        }
+        .note-card:hover { background-color: var(--surface-hover); }
+        .note-card.selected { border-color: var(--accent); border-width: 2px; background: var(--surface-hover); }
+        .note-card-title { font-weight: 800; font-size: 13px; margin-bottom: 2px; }
+        .note-card-desc { font-size: 11px; opacity: 0.5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* --- Editor --- */
+        .editor-pane { flex-grow: 1; display: flex; flex-direction: column; background-color: var(--bg-color); position: relative; }
+        .editor-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 30px; border-bottom: 1px solid var(--border); }
+        .editor-body { flex-grow: 1; overflow-y: auto; display: flex; justify-content: center; }
+        .editor-content { width: 100%; max-width: var(--max-editor-width); padding: 25px 20px; display: flex; flex-direction: column; }
+
+        .input-title { font-size: 30px; font-weight: 900; background: transparent; border: none; outline: none; color: var(--text); width: 100%; letter-spacing: -1px; margin-bottom: 5px; }
+        .input-tags { color: var(--accent); font-size: 12px; font-style: italic; background: transparent; border: none; outline: none; margin-bottom: 15px; }
+        .textarea-content { flex-grow: 1; background: transparent; border: none; color: var(--text); font-size: 16px; resize: none; outline: none; line-height: 1.6; }
+
+        .editor-footer { display: flex; justify-content: space-between; align-items: center; padding: 12px 30px; border-top: 1px solid var(--border); }
+
+        .btn-sec { 
+            background: var(--surface); color: var(--text); border: 1px solid var(--border); 
+            padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 800; cursor: pointer;
+            transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
+        .btn-sec:hover { border-color: var(--accent); background: var(--surface-hover); }
+
+        /* --- Saving Indicator --- */
+        .save-indicator {
+            font-size: 10px; font-weight: 800; color: var(--accent);
+            opacity: 0; transition: opacity 0.2s; display: flex; align-items: center; gap: 4px;
+        }
+        .save-indicator.active { opacity: 1; }
+
+        /* --- Modais --- */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.8); 
+            backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 9000;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-box { background: var(--surface); border-radius: 24px; border: 1px solid var(--border); width: 100%; max-width: 380px; padding: 30px; box-shadow: var(--card-shadow); text-align: center; }
+
+        @media (max-width: 768px) {
+            .sidebar { width: 100%; min-width: 100%; position: absolute; z-index: 50; }
+            .editor-pane { width: 100%; position: absolute; transform: translateX(100%); transition: 0.4s ease; z-index: 60; }
+            body.editor-open .editor-pane { transform: translateX(0); }
+            body.editor-open #back-mobile { display: flex !important; }
+            .hide-mobile { display: none !important; }
+        }
+    </style>
+</head>
+<body data-theme="dark">
+
+    <div class="toast-container" id="toast-container"></div>
+    
+    <input type="file" id="backup-input" accept=".json" style="display:none" onchange="Vault.importBackup(event)">
+
+    <div id="modal-overlay" class="modal-overlay">
+        <div class="modal-box" id="modal-content"></div>
+    </div>
+
+    <!-- TELA DE AUTENTICAÇÃO -->
+    <div id="screen-auth" class="screen active">
+        <div class="auth-container">
+            <header class="auth-header">
+                <div style="font-weight: 900; font-size: 15px; color: var(--accent);">🛡️ SECURE NOTE</div>
+                <div id="clock-auth" style="font-weight: 700; opacity: 0.6; font-size: 11px;">--:--:--</div>
+                <button class="btn-sec" onclick="UI.toggleTheme()">🌓 TEMA</button>
+            </header>
+            
+            <main class="auth-center">
+                <div class="auth-card" id="main-auth-card">
+                    <div class="window-dots">
+                        <div class="dot dot-red" title="Redefinir App" onclick="UI.confirm('Cuidado!', 'Isto apagará todos os seus dados permanentemente. Continuar?', () => { localStorage.clear(); location.reload(); })"></div>
+                        <div class="dot dot-yellow" title="Minimizar"></div>
+                        <div class="dot dot-green" title="Ecrã Inteiro" onclick="UI.toggleFullscreen()"></div>
+                    </div>
+
+                    <div id="view-setup" style="display: none; width: 100%;">
+                        <div style="font-size: 40px; margin-bottom: 8px;">🔐</div>
+                        <h2 style="font-size: 22px; font-weight: 900; margin-bottom: 5px;">Novo Cofre</h2>
+                        <p style="color: var(--text-muted); margin-bottom: 25px; font-size: 13px;">Defina a sua senha mestra.</p>
+                        <div class="input-group">
+                            <label>Senha Mestra</label>
+                            <input type="password" id="setup-pass" placeholder="Forte e memorável">
+                        </div>
+                        <div class="input-group">
+                            <label>Confirmar</label>
+                            <input type="password" id="setup-conf" placeholder="Repita a senha">
+                        </div>
+                        <button class="btn-main" onclick="Auth.setup()">CRIAR AGORA</button>
+                        <button class="btn-sec" style="margin-top:15px; border:none; width:100%" onclick="document.getElementById('backup-input').click()">Restaurar Backup</button>
+                    </div>
+
+                    <div id="view-login" style="display: none; width: 100%;">
+                        <div style="font-size: 45px; margin-bottom: 10px;">🗝️</div>
+                        <h2 style="font-size: 24px; font-weight: 900; margin-bottom: 5px;">SECURE NOTE</h2>
+                        <p style="color: var(--text-muted); margin-bottom: 30px; font-size: 13px;">Introduza a sua chave privada.</p>
+                        <div class="input-group">
+                            <label>Senha Mestra</label>
+                            <input type="password" id="login-pass" placeholder="Senha secreta" onkeydown="if(event.key==='Enter') Auth.login()">
+                            <button class="btn-eye" onclick="UI.togglePass('login-pass')">👁️</button>
+                        </div>
+                        <button class="btn-main" onclick="Auth.login()">DESBLOQUEAR</button>
+                        <div style="margin-top: 25px;">
+                            <button class="btn-sec" style="border:none; background:none; color:var(--accent); font-weight:800;" onclick="UI.showScreen('screen-recovery')">Recuperação por Código</button>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- ECRÃ DE RECUPERAÇÃO -->
+    <div id="screen-recovery" class="screen">
+        <div class="auth-container">
+            <div class="auth-center">
+                <div class="auth-card">
+                    <div style="font-size:40px; margin-bottom:10px;">🚨</div>
+                    <h2 style="font-size:22px; font-weight:900; margin-bottom:10px;">Recuperação</h2>
+                    <div class="input-group">
+                        <label>Código de Segurança</label>
+                        <input type="text" id="rec-code" placeholder="XXXX-XXXX-XXXX-XXXX" style="text-transform: uppercase; text-align: center; font-family: monospace; font-size: 14px;">
+                    </div>
+                    <div class="input-group">
+                        <label>Nova Senha</label>
+                        <input type="password" id="rec-pass" placeholder="Mínimo 6 carateres">
+                    </div>
+                    <button class="btn-main" onclick="Auth.recover()">REPOR ACESSO</button>
+                    <button class="btn-sec" style="margin-top:15px; width:100%; border:none;" onclick="UI.showScreen('screen-auth')">VOLTAR</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ECRÃ PRINCIPAL -->
+    <div id="screen-main" class="screen" onmousemove="Auth.resetIdleTimer()" onkeydown="Auth.resetIdleTimer()" onclick="Auth.resetIdleTimer()">
+        <aside class="sidebar" id="main-sidebar">
+            <div style="display:flex; justify-content: space-between; align-items:center;">
+                <div class="logo-text hide-mini" style="font-weight:900;">SECURE NOTE</div>
+                <div class="show-mini-only" style="font-weight:900; font-size:10px; color:var(--accent)">SN</div>
+                <button class="btn-sec" style="padding: 6px 8px;" onclick="UI.toggleSidebar()">↔️</button>
+            </div>
+            <button class="btn-main" onclick="Vault.createNote()" title="Nova Nota">
+                <span class="hide-mini">+ NOVA NOTA</span>
+                <span class="show-mini-only">+</span>
+            </button>
+            <button class="btn-sec" style="color:var(--accent); border-color:var(--accent);" onclick="Vault.openGen()" title="Gerador">
+                <span class="hide-mini">⚡ GERADOR</span>
+                <span class="show-mini-only">⚡</span>
+            </button>
+            <input type="text" id="search-input" class="hide-mini" style="background:var(--bg-color); border:1px solid var(--border); padding:10px; border-radius:10px; color:var(--text); outline:none; font-size: 13px;" placeholder="🔍 Pesquisar..." oninput="UI.renderList()">
+            <div class="notes-list hide-mini" id="notes-list"></div>
+            <button class="btn-sec" style="color:var(--danger); margin-top:auto;" onclick="Auth.logout()" title="Sair">
+                <span class="hide-mini">🚪 SAIR</span>
+                <span class="show-mini-only">🚪</span>
+            </button>
+        </aside>
+
+        <main class="editor-pane">
+            <header class="editor-header">
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <button class="btn-sec" id="back-mobile" style="display:none;" onclick="UI.closeEditorMobile()">← VOLTAR</button>
+                    <button id="pin-btn" class="btn-sec hide-mini-only" onclick="Vault.togglePin()">📌 FIXAR</button>
+                </div>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <div id="save-indicator" class="save-indicator">
+                        <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--accent);"></span>
+                        <span id="save-text">A GUARDAR...</span>
+                    </div>
+                    <button class="btn-sec" onclick="Vault.exportBackup()" title="Backup">💾</button>
+                    <button class="btn-sec hide-mobile" onclick="UI.toggleFullscreen()">🔲</button>
+                    <button class="btn-sec" onclick="UI.toggleTheme()">🌓</button>
+                </div>
+                <div id="clock-main" style="font-weight: 800; font-size: 11px; color:var(--text-muted)">--:--:--</div>
+            </header>
+
+            <div class="editor-body">
+                <div class="editor-content">
+                    <input type="text" id="note-title" class="input-title" placeholder="Título..." oninput="Vault.autoSave()">
+                    <input type="text" id="note-tags" class="input-tags" placeholder="#etiquetas" oninput="Vault.autoSave()">
+                    <textarea id="note-content" class="textarea-content" placeholder="Escreva aqui..." oninput="Vault.autoSave()"></textarea>
+                </div>
+            </div>
+
+            <footer class="editor-footer">
+                <div id="stats" style="font-size:10px; font-weight:800; color:var(--text-muted); text-transform: uppercase;">0 carateres</div>
+                <div style="display:flex; gap:8px;">
+                    <button class="btn-sec" onclick="Vault.exportCSV()">CSV</button>
+                    <button class="btn-sec" onclick="window.print()">PDF</button>
+                    <button class="btn-sec btn-danger" onclick="UI.confirm('Eliminar?', 'Deseja remover esta nota permanentemente?', () => Vault.deleteNote())">🗑️</button>
+                    <button class="btn-main" style="width:auto; padding: 8px 25px" onclick="Vault.saveNote(true)">GUARDAR</button>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <script>
+        const CryptoEngine = {
+            IV_LEN: 12, SALT_LEN: 16, ITER: 100000,
+            async deriveKey(password, salt) {
+                const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveKey"]);
+                return await crypto.subtle.deriveKey({ name: "PBKDF2", salt, iterations: this.ITER, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"]);
+            },
+            async encrypt(text, key) {
+                const iv = crypto.getRandomValues(new Uint8Array(this.IV_LEN));
+                const cipher = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, new TextEncoder().encode(text));
+                const blob = new Uint8Array(iv.length + cipher.byteLength);
+                blob.set(iv); blob.set(new Uint8Array(cipher), iv.length);
+                return btoa(String.fromCharCode(...blob));
+            },
+            async decrypt(b64, key) {
+                const blob = new Uint8Array(atob(b64).split("").map(c => c.charCodeAt(0)));
+                const iv = blob.slice(0, this.IV_LEN);
+                const data = blob.slice(this.IV_LEN);
+                const raw = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, data);
+                return new TextDecoder().decode(raw);
+            },
+            async wrap(key, wrappingKey) {
+                const raw = await crypto.subtle.exportKey("raw", key);
+                const iv = crypto.getRandomValues(new Uint8Array(this.IV_LEN));
+                const cipher = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, wrappingKey, raw);
+                const blob = new Uint8Array(iv.length + cipher.byteLength);
+                blob.set(iv); blob.set(new Uint8Array(cipher), iv.length);
+                return btoa(String.fromCharCode(...blob));
+            },
+            async unwrap(b64, wrappingKey) {
+                const blob = new Uint8Array(atob(b64).split("").map(c => c.charCodeAt(0)));
+                const iv = blob.slice(0, this.IV_LEN);
+                const data = blob.slice(this.IV_LEN);
+                const raw = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, wrappingKey, data);
+                return crypto.subtle.importKey("raw", raw, "AES-GCM", true, ["encrypt", "decrypt"]);
+            }
+        };
+
+        const State = { masterKey: null, notes: [], currentId: null, autoTimer: null, idleTimer: null, IDLE_LIMIT: 300000 }; // 5 min
+
+        const Auth = {
+            async setup() {
+                const p = document.getElementById('setup-pass').value;
+                const c = document.getElementById('setup-conf').value;
+                if(p !== c || p.length < 6) return UI.toast("Dados inválidos.");
+                try {
+                    const masterKey = await crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"]);
+                    const salt = crypto.getRandomValues(new Uint8Array(16));
+                    const wrapped = await CryptoEngine.wrap(masterKey, await CryptoEngine.deriveKey(p, salt));
+                    const recCode = Array.from(crypto.getRandomValues(new Uint8Array(8))).map(b => b.toString(16).toUpperCase().padStart(2,'0')).join('-');
+                    const wrappedRec = await CryptoEngine.wrap(masterKey, await CryptoEngine.deriveKey(recCode, salt));
+                    localStorage.setItem("vault_meta", `${btoa(String.fromCharCode(...salt))}:${wrapped}:${wrappedRec}`);
+                    State.masterKey = masterKey;
+                    UI.alert(`Cofre Criado`, `GUARDE ESTE CÓDIGO:<br><br><b style="font-size:18px; color:var(--accent); font-family:monospace;">${recCode}</b>`, () => Auth.initApp());
+                } catch(e) { UI.toast("Erro fatal."); }
+            },
+            async login() {
+                const p = document.getElementById('login-pass').value;
+                try {
+                    const meta = localStorage.getItem("vault_meta").split(":");
+                    const salt = new Uint8Array(atob(meta[0]).split("").map(c => c.charCodeAt(0)));
+                    State.masterKey = await CryptoEngine.unwrap(meta[1], await CryptoEngine.deriveKey(p, salt));
+                    Auth.initApp();
+                } catch(e) { UI.toast("Senha incorreta."); }
+            },
+            async recover() {
+                const code = document.getElementById('rec-code').value.trim().toUpperCase();
+                const pass = document.getElementById('rec-pass').value;
+                try {
+                    const meta = localStorage.getItem("vault_meta").split(":");
+                    const salt = new Uint8Array(atob(meta[0]).split("").map(c => c.charCodeAt(0)));
+                    State.masterKey = await CryptoEngine.unwrap(meta[2], await CryptoEngine.deriveKey(code, salt));
+                    const wrapped = await CryptoEngine.wrap(State.masterKey, await CryptoEngine.deriveKey(pass, salt));
+                    localStorage.setItem("vault_meta", `${meta[0]}:${wrapped}:${meta[2]}`);
+                    Auth.initApp();
+                } catch(e) { UI.toast("Código inválido."); }
+            },
+            initApp() { 
+                UI.showScreen('screen-main'); 
+                Vault.loadNotes(); 
+                Auth.resetIdleTimer();
+                UI.toast("Bem-vindo."); 
+            },
+            logout() { location.reload(); },
+            resetIdleTimer() {
+                if(!State.masterKey) return;
+                clearTimeout(State.idleTimer);
+                State.idleTimer = setTimeout(() => {
+                    UI.toast("Cofre bloqueado por inatividade.");
+                    Auth.logout();
+                }, State.IDLE_LIMIT);
+            }
+        };
+
+        const Vault = {
+            async loadNotes() {
+                UI.showSkeletons();
+                State.notes = [];
+                for(let i=0; i<localStorage.length; i++){
+                    const k = localStorage.key(i);
+                    if(k.startsWith("v_note_")){
+                        try {
+                            const raw = await CryptoEngine.decrypt(localStorage.getItem(k), State.masterKey);
+                            State.notes.push({ id: k.replace("v_note_", ""), ...JSON.parse(raw) });
+                        } catch(e) {}
+                    }
+                }
+                UI.renderList();
+            },
+            async createNote() {
+                document.getElementById('search-input').value = "";
+                const id = crypto.randomUUID();
+                const note = { id, title: "", tags: "", content: "", pinned: false };
+                State.notes.unshift(note);
+                const enc = await CryptoEngine.encrypt(JSON.stringify(note), State.masterKey);
+                localStorage.setItem(`v_note_${id}`, enc);
+                Vault.select(id);
+                document.getElementById('note-title').focus();
+                UI.toast("Nota criada.");
+            },
+            select(id) {
+                State.currentId = id;
+                const n = State.notes.find(x => x.id === id);
+                if(!n) return;
+                document.getElementById('note-title').value = n.title;
+                document.getElementById('note-tags').value = n.tags;
+                document.getElementById('note-content').value = n.content;
+                const pBtn = document.getElementById('pin-btn');
+                pBtn.style.background = n.pinned ? 'var(--accent)' : 'var(--surface)';
+                pBtn.style.color = n.pinned ? 'white' : 'var(--text-muted)';
+                UI.renderList();
+                UI.updateStats();
+                if(window.innerWidth < 768) document.body.classList.add('editor-open');
+            },
+            autoSave() {
+                clearTimeout(State.autoTimer);
+                UI.updateStats();
+                UI.setSavingStatus(true);
+                State.autoTimer = setTimeout(() => Vault.saveNote(false), 1500);
+            },
+            async saveNote(manual) {
+                if(!State.currentId) return;
+                const n = State.notes.find(x => x.id === State.currentId);
+                if(!n) return;
+                n.title = document.getElementById('note-title').value;
+                n.tags = document.getElementById('note-tags').value;
+                n.content = document.getElementById('note-content').value;
+                localStorage.setItem(`v_note_${n.id}`, await CryptoEngine.encrypt(JSON.stringify(n), State.masterKey));
+                UI.renderList();
+                UI.setSavingStatus(false);
+                if(manual) UI.toast("Guardado.");
+            },
+            deleteNote() {
+                if(!State.currentId) return;
+                localStorage.removeItem(`v_note_${State.currentId}`);
+                State.notes = State.notes.filter(x => x.id !== State.currentId);
+                State.currentId = null;
+                document.getElementById('note-title').value = "";
+                document.getElementById('note-tags').value = "";
+                document.getElementById('note-content').value = "";
+                UI.updateStats();
+                UI.renderList(); 
+                UI.closeEditorMobile(); 
+                UI.toast("Eliminado.");
+            },
+            togglePin() {
+                const n = State.notes.find(x => x.id === State.currentId);
+                if(n) { n.pinned = !n.pinned; Vault.saveNote(false); }
+            },
+            openGen() {
+                UI.customModal(`Gerador de Chaves`, `
+                    <div id="gen-result" style="background:rgba(0,0,0,0.06); padding:15px; border-radius:12px; font-family:monospace; font-weight:bold; color:var(--accent); margin-bottom:15px; font-size:16px; text-align:center; word-break:break-all;">Gerando...</div>
+                    <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:20px;">
+                        <label style="font-size:10px; font-weight:800; color:var(--text-muted);">TAMANHO: <b id="len-label">20</b></label>
+                        <input type="range" id="gen-len" min="12" max="64" value="20" style="width:100%; accent-color:var(--accent);" oninput="document.getElementById('len-label').innerText=this.value; Vault.runGen();">
+                    </div>
+                    <button class="btn-main" onclick="Vault.runGen()">REGERAR</button>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-top:8px;">
+                        <button class="btn-sec" style="justify-content:center" onclick="Vault.copyPass()">COPIAR</button>
+                        <button class="btn-sec" style="justify-content:center" onclick="Vault.savePassAsNote()">SALVAR</button>
+                    </div>
+                `);
+                setTimeout(Vault.runGen, 50);
+            },
+            runGen() {
+                const lenInput = document.getElementById('gen-len');
+                if(!lenInput) return;
+                const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=";
+                let pass = "";
+                const randomValues = new Uint32Array(parseInt(lenInput.value));
+                crypto.getRandomValues(randomValues);
+                for(let i=0; i<randomValues.length; i++) pass += charset.charAt(randomValues[i] % charset.length);
+                const out = document.getElementById('gen-result');
+                if(out) out.innerText = pass;
+            },
+            copyPass() {
+                const pass = document.getElementById('gen-result').innerText;
+                const el = document.createElement('textarea'); el.value = pass; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el);
+                UI.toast("Copiado!");
+            },
+            async savePassAsNote() {
+                const pass = document.getElementById('gen-result').innerText;
+                const id = crypto.randomUUID();
+                const note = { id, title: "🔑 Credencial", tags: "#segurança", content: `Password: ${pass}`, pinned: true };
+                State.notes.unshift(note);
+                localStorage.setItem(`v_note_${id}`, await CryptoEngine.encrypt(JSON.stringify(note), State.masterKey));
+                UI.renderList(); UI.closeModal(); Vault.select(id); UI.toast("Criado.");
+            },
+            exportBackup() {
+                const data = {};
+                for(let i=0; i<localStorage.length; i++){
+                    const k = localStorage.key(i);
+                    if(k.startsWith("v_") || k.startsWith("vault_")) data[k] = localStorage.getItem(k);
+                }
+                const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], {type:'application/json'}));
+                a.download = "SECURE_NOTE_Backup.json"; a.click();
+            },
+            importBackup(e) {
+                const r = new FileReader();
+                r.onload = (ev) => {
+                    const d = JSON.parse(ev.target.result);
+                    Object.keys(d).forEach(k => localStorage.setItem(k, d[k]));
+                    location.reload();
+                };
+                r.readAsText(e.target.files[0]);
+            },
+            exportCSV() {
+                const n = State.notes.find(x => x.id === State.currentId);
+                if(!n) return;
+                const csv = `Titulo,Conteudo\n"${n.title}","${n.content.replace(/"/g, '""')}"`;
+                const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+                a.download = "nota.csv"; a.click();
+            }
+        };
+
+        const UI = {
+            showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); },
+            showSkeletons() {
+                const list = document.getElementById('notes-list');
+                list.innerHTML = Array(5).fill('<div class="skeleton"></div>').join('');
+            },
+            renderList() {
+                const query = document.getElementById('search-input').value.toLowerCase();
+                const list = document.getElementById('notes-list');
+                list.innerHTML = "";
+                const filtered = State.notes.filter(n => n.title.toLowerCase().includes(query) || n.content.toLowerCase().includes(query)).sort((a,b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
+                
+                if(filtered.length === 0 && query === "") {
+                    list.innerHTML = `<div style="text-align:center; padding:40px; color:var(--text-muted); font-size:12px;">Nenhuma nota encontrada.</div>`;
+                    return;
+                }
+
+                filtered.forEach(n => {
+                    const div = document.createElement('div');
+                    div.className = `note-card ${State.currentId === n.id ? 'selected' : ''}`;
+                    div.onclick = () => Vault.select(n.id);
+                    div.innerHTML = `<div class="note-card-title">${n.title || "Sem Título"} ${n.pinned ? '📌' : ''}</div><div class="note-card-desc">${n.content.substring(0, 30)}</div>`;
+                    list.appendChild(div);
+                });
+            },
+            setSavingStatus(isSaving) {
+                const ind = document.getElementById('save-indicator');
+                const txt = document.getElementById('save-text');
+                if(isSaving) {
+                    ind.classList.add('active');
+                    txt.innerText = "A GUARDAR...";
+                } else {
+                    txt.innerText = "GUARDADO";
+                    setTimeout(() => ind.classList.remove('active'), 2000);
+                }
+            },
+            toggleTheme() { document.documentElement.setAttribute('data-theme', document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'); },
+            toggleSidebar() { document.getElementById('main-sidebar').classList.toggle('minimized'); },
+            toggleFullscreen() { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else if (document.exitFullscreen) document.exitFullscreen(); },
+            togglePass(id) { const i = document.getElementById(id); i.type = i.type === 'password' ? 'text' : 'password'; },
+            toast(msg) { const t = document.createElement('div'); t.className = 'toast'; t.innerHTML = `✓ ${msg}`; document.getElementById('toast-container').appendChild(t); setTimeout(() => { t.style.opacity="0"; setTimeout(()=>t.remove(), 400); }, 2500); },
+            updateStats() { document.getElementById('stats').innerText = `${document.getElementById('note-content').value.length} carateres`; },
+            alert(title, msg, onOk) {
+                const m = document.getElementById('modal-content');
+                m.innerHTML = `<h3 style="margin-bottom:10px; font-weight:900;">${title}</h3><div style="margin-bottom:20px; line-height:1.5; color:var(--text-muted); font-size:13px;">${msg}</div><button class="btn-main" id="modal-ok-btn">OK</button>`;
+                document.getElementById('modal-ok-btn').onclick = () => { UI.closeModal(); if(onOk) onOk(); };
+                document.getElementById('modal-overlay').classList.add('active');
+            },
+            confirm(title, msg, onYes) {
+                const m = document.getElementById('modal-content');
+                m.innerHTML = `<h3 style="margin-bottom:10px; font-weight:900;">${title}</h3><div style="margin-bottom:20px; line-height:1.5; color:var(--text-muted); font-size:13px;">${msg}</div><div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;"><button class="btn-sec" onclick="UI.closeModal()">CANCELAR</button><button class="btn-main" style="background:var(--danger); box-shadow:none;" id="modal-yes-btn">CONFIRMAR</button></div>`;
+                document.getElementById('modal-yes-btn').onclick = () => { UI.closeModal(); onYes(); };
+                document.getElementById('modal-overlay').classList.add('active');
+            },
+            customModal(title, html) {
+                const m = document.getElementById('modal-content');
+                m.innerHTML = `<h3 style="margin-bottom:15px; font-weight:900;">${title}</h3>${html}<button class="btn-sec" style="margin-top:15px; width:100%; border:none;" onclick="UI.closeModal()">FECHAR</button>`;
+                document.getElementById('modal-overlay').classList.add('active');
+            },
+            closeModal() { document.getElementById('modal-overlay').classList.remove('active'); },
+            closeEditorMobile() { document.body.classList.remove('editor-open'); }
+        };
+
+        setInterval(() => {
+            const time = new Date().toLocaleTimeString('pt-PT');
+            const clA = document.getElementById('clock-auth');
+            const clM = document.getElementById('clock-main');
+            if(clA) clA.innerText = time;
+            if(clM) clM.innerText = time;
+        }, 1000);
+
+        window.onload = () => {
+            if(localStorage.getItem("vault_meta")) document.getElementById('view-login').style.display = "block";
+            else document.getElementById('view-setup').style.display = "block";
+        };
+    </script>
+</body>
+</html>
